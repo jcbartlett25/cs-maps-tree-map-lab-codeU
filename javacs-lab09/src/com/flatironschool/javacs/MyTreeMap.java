@@ -53,7 +53,7 @@ public class MyTreeMap<K, V> implements Map<K, V> {
 
 	@Override
 	public boolean containsKey(Object target) {
-		return findNode(target) != null;
+		return findNode(target, root) != null;
 	}
 
 	/**
@@ -61,19 +61,27 @@ public class MyTreeMap<K, V> implements Map<K, V> {
 	 * 
 	 * @param target
 	 */
-	private Node findNode(Object target) {
+	private Node findNode(Object target, Node node) {
 		// some implementations can handle null as a key, but not this one
 		if (target == null) {
             throw new NullPointerException();
+	    }
+
+	    if (node == null) {
+	    	return null;
 	    }
 		
 		// something to make the compiler happy
 		@SuppressWarnings("unchecked")
 		Comparable<? super K> k = (Comparable<? super K>) target;
 		
-		// the actual search
-        // TODO: Fill this in.
-        return null;
+		int cmp = k.compareTo(node.key);
+		if(cmp < 0)
+			return findNode(target, node.left);
+		else if(cmp > 0)
+			return findNode(target, node.right);
+		else
+			return node;
 	}
 
 	/**
@@ -92,6 +100,29 @@ public class MyTreeMap<K, V> implements Map<K, V> {
 
 	@Override
 	public boolean containsValue(Object target) {
+
+		return _containsValue(target, root);
+	}
+
+	private boolean _containsValue(Object target, Node node) {
+
+		if(node == null) 
+			return false;
+		
+
+		if(equals(node.value, target)) 
+			return true;
+		
+		
+		boolean left = _containsValue(target, node.left);
+		boolean right = _containsValue(target, node.right);
+
+		if(left)
+			return true;
+
+		if(right)
+			return true;
+
 		return false;
 	}
 
@@ -102,7 +133,7 @@ public class MyTreeMap<K, V> implements Map<K, V> {
 
 	@Override
 	public V get(Object key) {
-		Node node = findNode(key);
+		Node node = findNode(key, root);
 		if (node == null) {
 			return null;
 		}
@@ -117,8 +148,20 @@ public class MyTreeMap<K, V> implements Map<K, V> {
 	@Override
 	public Set<K> keySet() {
 		Set<K> set = new LinkedHashSet<K>();
-        // TODO: Fill this in.
+
+        _keySet(root, set);
 		return set;
+	}
+
+	// In order traversal: left-->parent--->right
+	private void _keySet(Node node, Set<K> set) {
+
+		if (node == null)
+			return;
+
+		_keySet(node.left, set);
+		set.add(node.key);
+		_keySet(node.right, set);
 	}
 
 	@Override
@@ -135,8 +178,44 @@ public class MyTreeMap<K, V> implements Map<K, V> {
 	}
 
 	private V putHelper(Node node, K key, V value) {
-        // TODO: Fill this in.
-        return null;
+        
+        // something to make the compiler happy
+		@SuppressWarnings("unchecked")
+		Comparable<? super K> k = (Comparable<? super K>) key;
+		int cmp = k.compareTo(node.key);
+
+		// Less than
+		if (cmp < 0) {
+
+			// Node doesn't exist, add it
+			if (node.left == null) {
+				node.left = new Node(key, value);
+				size++;
+				return value;
+			}
+			else {
+				return putHelper(node.left, key, value);
+			}
+		}
+
+		// Greater than
+		else if (cmp > 0) {
+
+			// Node doesn't exist, add it
+			if (node.right == null) {
+				node.right = new Node(key, value);
+				size++;
+				return value;
+			}
+			else {
+				return putHelper(node.right, key, value);
+			}
+		}
+
+		else {
+			node.value = value;
+			return value;
+		}
 	}
 
 	@Override
